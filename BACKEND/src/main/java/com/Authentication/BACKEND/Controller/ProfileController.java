@@ -2,6 +2,7 @@ package com.Authentication.BACKEND.Controller;
 
 import com.Authentication.BACKEND.Io.ProfileRequest;
 import com.Authentication.BACKEND.Io.ProfileResponse;
+import com.Authentication.BACKEND.Service.EmailService;
 import com.Authentication.BACKEND.Service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +16,13 @@ import org.springframework.web.bind.annotation.*;
 public class ProfileController {
 
      private final ProfileService profileService;
+     private final EmailService emailService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
        public ProfileResponse register(@Valid @RequestBody ProfileRequest request) {
           ProfileResponse response = profileService.createProfile(request);
-          //Welcome Email
+          emailService.sendWelcomeEmail(response.getEmail(), response.getName());
         return response;
     }
 
