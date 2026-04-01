@@ -2,8 +2,11 @@ package com.Authentication.BACKEND.Controller;
 
 import com.Authentication.BACKEND.Io.AuthRequest;
 import com.Authentication.BACKEND.Io.AuthResponse;
+import com.Authentication.BACKEND.Io.ResetPasswordRequest;
 import com.Authentication.BACKEND.Service.AppUserDetailsService;
+import com.Authentication.BACKEND.Service.ProfileService;
 import com.Authentication.BACKEND.Util.JwtUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
@@ -17,10 +20,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 
@@ -31,6 +34,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AppUserDetailsService appUserDetailsService;
     private final JwtUtil jwtUtil;
+    private final ProfileService profileService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
@@ -67,5 +71,28 @@ public class AuthController {
     private void authenticate(String email, String password) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
     }
+
+    @GetMapping("/is-authenticated")
+    public ResponseEntity<Boolean>isAuthenticated(@CurrentSecurityContext(expression = "authentication?.name")String email) {
+          return ResponseEntity.ok(email != null);
+    }
+
+    @PostMapping("/send-reset-otp")
+    public void sendResetOtp(@RequestParam String email) {
+          try {
+              profileService.sendResetOtp(email);
+          } catch (Exception e) {
+               throw  new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+          }
+    }
+
+        @PostMapping("/reset-password")
+        public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+            try {
+                profileService.resetPassword(request.getEmail(), request.getOtp(),request.getNewPassword());
+            } catch (Exception e) {
+                throw  new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            }
+        }
 
 }

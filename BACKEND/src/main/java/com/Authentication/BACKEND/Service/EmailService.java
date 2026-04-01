@@ -41,4 +41,26 @@ public class EmailService {
         // Send the email
         mailSender.send(message);
     }
+
+  public void sendResetOtpEmail(String toEmail, String otp) {
+
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setFrom(fromEmail);
+    message.setTo(toEmail);
+    message.setSubject("Password Reset OTP - CampusOps Hub");
+
+    String body = "Dear User,\n\n"
+            + "We received a request to reset your password for your CampusOps Hub account.\n\n"
+            + " Your OTP (One-Time Password) is: " + otp + "\n\n"
+            + " This OTP is valid for 10 minutes.\n\n"
+            + "If you did not request this password reset, please ignore this email.\n\n"
+            + "For security reasons, do not share this OTP with anyone.\n\n"
+            + "Best regards,\n"
+            + "CampusOps Hub Team";
+
+    message.setText(body);
+
+    mailSender.send(message);
+}
+
 }
