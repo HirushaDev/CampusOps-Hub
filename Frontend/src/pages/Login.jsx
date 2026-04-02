@@ -4,7 +4,7 @@ import { FaGithub } from "react-icons/fa";
 import { FiArrowLeft, FiHome, FiMail, FiLock, FiUser } from "react-icons/fi";
 import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
-import { loginUser, registerUser } from "../api";
+import API, { loginUser, registerUser } from "../api";
 import toast from "react-hot-toast";
 
 const Auth = () => {
@@ -40,6 +40,16 @@ const Auth = () => {
     return fallback;
   };
 
+  const resolveEmailVerified = (data) => {
+    const value =
+      data?.emailVerified ??
+      data?.isEmailVerified ??
+      data?.verified ??
+      data?.isVerified;
+
+    return value === true || value === "true";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -53,10 +63,29 @@ const Auth = () => {
           password: form.password,
         });
 
+        const loggedInUser = {
+          email: data?.email || form.email.trim(),
+          token: data?.token,
+          name: data?.name,
+          emailVerified: resolveEmailVerified(data),
+        };
+
         localStorage.setItem(
           "user",
-          JSON.stringify({ email: data.email, token: data.token })
+          JSON.stringify(loggedInUser)
         );
+
+        try {
+          const profileRes = await API.get(`/user?email=${loggedInUser.email}`);
+          const syncedUser = {
+            ...loggedInUser,
+            ...profileRes.data,
+            emailVerified: resolveEmailVerified(profileRes.data),
+          };
+          localStorage.setItem("user", JSON.stringify(syncedUser));
+        } catch {
+          // Keep login flow working even if profile sync endpoint is unavailable.
+        }
 
         toast.success("Login successful!");
         navigate("/dashboard", { replace: true });
