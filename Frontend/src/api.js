@@ -27,4 +27,8 @@ export const loginUser = (payload) => API.post("/login", payload);
 
 export const registerUser = (payload) => API.post("/register", payload);
 
+export const resetEmailOtp = (payload) => API.post(`/send-reset-otp?email=${payload.email}`, payload);
+
+export const resetPassword = (payload) => API.post("/reset-password", payload);
+
 export default API;

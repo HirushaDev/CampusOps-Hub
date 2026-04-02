@@ -5,6 +5,7 @@ import { FiArrowLeft, FiHome, FiMail, FiLock, FiUser } from "react-icons/fi";
 import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api";
+import toast from "react-hot-toast";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -57,6 +58,7 @@ const Auth = () => {
           JSON.stringify({ email: data.email, token: data.token })
         );
 
+        toast.success("Login successful!");
         navigate("/dashboard", { replace: true });
         return;
       }
@@ -67,24 +69,25 @@ const Auth = () => {
         password: form.password,
       });
 
-      setSuccess("Registration successful. Please sign in.");
+      const successMessage = "Registration successful. Please sign in.";
+      setSuccess(successMessage);
+      toast.success(successMessage);
       setIsLogin(true);
       setForm({ name: "", email: form.email, password: "" });
     } catch (err) {
-      setError(
-        getErrorMessage(
-          err,
-          isLogin ? "Login failed. Please try again." : "Registration failed. Please try again."
-        )
+      const errorMessage = getErrorMessage(
+        err,
+        isLogin ? "Login failed. Please try again." : "Registration failed. Please try again."
       );
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleForgotPassword = () => {
-    alert("Redirect to Forgot Password page");
-    // Example: navigate("/forgot-password");
+         navigate("/reset-password");
   };
 
   return (
