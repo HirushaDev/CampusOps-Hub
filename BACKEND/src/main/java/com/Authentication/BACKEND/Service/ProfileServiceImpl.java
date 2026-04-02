@@ -1,5 +1,6 @@
 package com.Authentication.BACKEND.Service;
 
+import com.Authentication.BACKEND.Entity.Role;
 import com.Authentication.BACKEND.Entity.UserEntity;
 import com.Authentication.BACKEND.Io.ProfileRequest;
 import com.Authentication.BACKEND.Io.ProfileResponse;
@@ -158,6 +159,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .userId(UUID.randomUUID().toString())
                 .name(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ROLE_USER)
                 .isAccountVerified(false)
                 .resetOtpExpiredAt(0L)
                 .verifyOtp(null)
