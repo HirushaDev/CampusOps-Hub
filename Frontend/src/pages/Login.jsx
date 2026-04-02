@@ -4,10 +4,14 @@ import { FaGithub } from "react-icons/fa";
 import { FiArrowLeft, FiHome, FiMail, FiLock, FiUser } from "react-icons/fi";
 import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { loginUser, registerUser } from "../api";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
   const isSubmitDisabled =
@@ -15,11 +19,67 @@ const Auth = () => {
     !form.password.trim() ||
     (!isLogin && !form.name.trim());
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) {
+      setError("");
+    }
+    if (success) {
+      setSuccess("");
+    }
+  };
 
-  const handleSubmit = (e) => {
+  const getErrorMessage = (err, fallback) => {
+    if (err?.response?.data?.message) {
+      return err.response.data.message;
+    }
+    if (typeof err?.response?.data === "string") {
+      return err.response.data;
+    }
+    return fallback;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(isLogin ? "Login clicked" : "Register clicked");
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { data } = await loginUser({
+          email: form.email.trim(),
+          password: form.password,
+        });
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ email: data.email, token: data.token })
+        );
+
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
+      await registerUser({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+
+      setSuccess("Registration successful. Please sign in.");
+      setIsLogin(true);
+      setForm({ name: "", email: form.email, password: "" });
+    } catch (err) {
+      setError(
+        getErrorMessage(
+          err,
+          isLogin ? "Login failed. Please try again." : "Registration failed. Please try again."
+        )
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -71,6 +131,17 @@ const Auth = () => {
 
         {/* Form */}
         <form className="w-full flex flex-col gap-3" onSubmit={handleSubmit}>
+          {error && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+              {success}
+            </p>
+          )}
+
           {!isLogin && (
             <div className="relative">
               <FiUser className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -127,16 +198,16 @@ const Auth = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSubmitDisabled}
+            disabled={isSubmitDisabled || loading}
             className={`mt-1 rounded-lg p-2.5 text-sm text-white font-semibold transition ${
-              isSubmitDisabled
+              isSubmitDisabled || loading
                 ? "cursor-not-allowed bg-slate-300"
                 : isLogin
                 ? "bg-cyan-700 hover:bg-cyan-600"
                 : "bg-green-600 hover:bg-green-500"
             }`}
           >
-            {isLogin ? "Sign In" : "Sign Up"}
+            {loading ? "Please wait..." : isLogin ? "Sign In" : "Sign Up"}
           </button>
         </form>
 
@@ -144,6 +215,7 @@ const Auth = () => {
         <p className="mt-4 text-center text-xs text-gray-500">
           {isLogin ? "New here?" : "Already have an account?"}{" "}
           <button
+            type="button"
             onClick={() => setIsLogin(!isLogin)}
             className="text-cyan-700 font-semibold hover:underline"
           >
