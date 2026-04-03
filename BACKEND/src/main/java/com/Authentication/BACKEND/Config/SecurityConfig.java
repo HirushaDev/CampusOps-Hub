@@ -1,6 +1,7 @@
 package com.Authentication.BACKEND.Config;
 
 import com.Authentication.BACKEND.Filter.JwtRequestFilter;
+import com.Authentication.BACKEND.Service.OAuth2AuthenticationSuccessHandler;
 import com.Authentication.BACKEND.Service.AppUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,7 @@ public class SecurityConfig {
     private final AppUserDetailsService appUserDetailsService;
     private final JwtRequestFilter jwtRequestFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,16 +40,28 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/login", "/admin/login", "/register", "/send-reset-otp", "/reset-password", "/logout")
-                        .permitAll()
-                        .anyRequest().authenticated())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .logout(AbstractHttpConfigurer::disable)
+                        .requestMatchers(
+                                "/login",
+                                "/admin/login",
+                                "/register",
+                                "/send-reset-otp",
+                                "/reset-password",
+                                "/logout",
+                                "/oauth2/**",
+                                "/error"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .oauth2Login(oauth -> oauth
+                            .successHandler(oAuth2AuthenticationSuccessHandler)
+                )
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint));
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

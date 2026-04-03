@@ -159,6 +159,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .userId(UUID.randomUUID().toString())
                 .name(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .authProvider("LOCAL")
                 .role(Role.ROLE_USER)
             .isActive(true)
                 .isAccountVerified(false)

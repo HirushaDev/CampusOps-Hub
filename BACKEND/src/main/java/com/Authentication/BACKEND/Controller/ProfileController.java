@@ -22,7 +22,12 @@ public class ProfileController {
     @ResponseStatus(HttpStatus.CREATED)
        public ProfileResponse register(@Valid @RequestBody ProfileRequest request) {
           ProfileResponse response = profileService.createProfile(request);
-          emailService.sendWelcomeEmail(response.getEmail(), response.getName());
+          try {
+              emailService.sendWelcomeEmail(response.getEmail(), response.getName());
+          } catch (Exception ex) {
+              // Do not block registration if welcome email provider is temporarily unavailable.
+              System.err.println("Welcome email sending failed: " + ex.getMessage());
+          }
         return response;
     }
 

@@ -3,12 +3,14 @@ package com.Authentication.BACKEND.Controller;
 import com.Authentication.BACKEND.Entity.Role;
 import com.Authentication.BACKEND.Service.RoleChangeService;
 import com.Authentication.BACKEND.Repository.UserRepository;
+import com.Authentication.BACKEND.Io.AdminUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.Authentication.BACKEND.Entity.UserEntity;
 import java.util.List;
+import java.util.Locale;
 
 
 @RestController
@@ -33,8 +35,30 @@ public class AdminController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserEntity> getAllUsers() {
-        return userRepository.findAll();
+    public List<AdminUserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::mapToAdminUserResponse)
+                .toList();
+    }
+
+    private AdminUserResponse mapToAdminUserResponse(UserEntity user) {
+        String provider = user.getAuthProvider();
+        if (provider == null || provider.isBlank()) {
+            provider = "LOCAL";
+        }
+
+        return AdminUserResponse.builder()
+                .id(user.getId())
+                .userId(user.getUserId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .isAccountVerified(user.getIsAccountVerified())
+                .isActive(user.getIsActive())
+                .role(user.getRole())
+                .authProvider(provider.toUpperCase(Locale.ROOT))
+                .createdAt(user.getCreatedAt())
+                .build();
     }
 
     @PutMapping("/users/{userId}/activate")

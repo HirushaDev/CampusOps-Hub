@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,32 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final ProfileService profileService;
     private final UserRepository userRepository;
+
+    private String resolveEmailForOtp(String authName, String requestedEmail) {
+        if (requestedEmail != null && !requestedEmail.isBlank()) {
+            return requestedEmail;
+        }
+
+        if (authName == null || authName.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing authenticated user");
+        }
+
+        if (authName.contains("@")) {
+            return authName;
+        }
+
+        Optional<UserEntity> byUserId = userRepository.findByUserId(authName);
+        if (byUserId.isPresent()) {
+            return byUserId.get().getEmail();
+        }
+
+        Optional<UserEntity> byEmail = userRepository.findByEmail(authName);
+        if (byEmail.isPresent()) {
+            return byEmail.get().getEmail();
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to resolve user email for OTP verification");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
@@ -73,8 +100,14 @@ public class AuthController {
                     .maxAge(Duration.ofDays(1))
                     .sameSite("Strict")
                     .build();
+
+                String provider = user.getAuthProvider();
+                if (provider == null || provider.isBlank()) {
+                provider = "LOCAL";
+                }
+
             return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .body(new AuthResponse(request.getEmail(), jwtToken, user.getRole().name()));
+                    .body(new AuthResponse(request.getEmail(), jwtToken, user.getRole().name(), provider.toUpperCase(), user.getIsAccountVerified()));
         } catch (BadCredentialsException ex) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", true);
@@ -121,21 +154,26 @@ public class AuthController {
         }
 
         @PostMapping("/send-otp")
-        public void sendVerifyOtp(@CurrentSecurityContext(expression = "authentication?.name")String email) {
+           public void sendVerifyOtp(
+                 @CurrentSecurityContext(expression = "authentication?.name") String authName,
+                 @RequestParam(required = false) String email
+           ) {
             try {
-                 profileService.sendOtp(email);
+                  profileService.sendOtp(resolveEmailForOtp(authName, email));
             } catch (Exception e) {
                  throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
             }
         }
 
         @PostMapping("/verify-otp")
-        public void verifyEmail(@RequestBody Map<String, Object> request,@CurrentSecurityContext(expression = "authentication?.name")String email) {
-        if(request.get("otp").toString() == null) {
+           public void verifyEmail(@RequestBody Map<String, Object> request,@CurrentSecurityContext(expression = "authentication?.name")String authName) {
+          Object otpValue = request.get("otp");
+          if (otpValue == null || otpValue.toString().isBlank()) {
               throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Missing OTP");
         }
              try {
-                  profileService.verifyOtp(email, request.get("otp").toString());
+                   String requestedEmail = request.get("email") == null ? null : request.get("email").toString();
+                   profileService.verifyOtp(resolveEmailForOtp(authName, requestedEmail), otpValue.toString());
              } catch (Exception e) {
                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,e.getMessage());
              }
