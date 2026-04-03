@@ -13,7 +13,12 @@ const PrivateNavbar = () => {
 
   const resolveEmailVerified = (data, fallback = false) => {
     const value =
-      data?.emailVerified ?? data?.isEmailVerified ?? data?.verified ?? data?.isVerified;
+      data?.emailVerified ??
+      data?.isEmailVerified ??
+      data?.verified ??
+      data?.isVerified ??
+      data?.isAccountVerified ??
+      data?.accountVerified;
     if (value === undefined || value === null) return fallback;
     return value === true || value === "true";
   };
@@ -26,7 +31,7 @@ const PrivateNavbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const navItems = [
-    { to: "/user-home", label: "Home" },
+    { to: "/dashboard", label: "Home" },
     { to: "/user-booking", label: "Booking" },
     { to: "/user-ticket", label: "Create Ticket" },
     { to: "/user-service", label: "Services" },
@@ -42,7 +47,7 @@ const PrivateNavbar = () => {
     const fetchUser = async () => {
       if (!user?.email) return;
       try {
-        const res = await API.get(`/user?email=${user.email}`);
+        const res = await API.get("/profile");
         const verifiedFromApi = resolveEmailVerified(res.data, resolveEmailVerified(user));
         const refreshedUser = {
           ...user,
@@ -72,7 +77,7 @@ const PrivateNavbar = () => {
     }
 
     try {
-      await API.post(`/send-otp?email=${user.email}`);
+      await API.post(`/send-otp?email=${encodeURIComponent(user.email)}`);
       toast.success("OTP sent to your email!");
       setShowOtpInput(true);
     } catch (err) {

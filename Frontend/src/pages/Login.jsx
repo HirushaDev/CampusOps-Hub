@@ -45,7 +45,9 @@ const Auth = () => {
       data?.emailVerified ??
       data?.isEmailVerified ??
       data?.verified ??
-      data?.isVerified;
+      data?.isVerified ??
+      data?.isAccountVerified ??
+      data?.accountVerified;
 
     return value === true || value === "true";
   };
@@ -63,11 +65,15 @@ const Auth = () => {
           password: form.password,
         });
 
+        let isEmailVerified = resolveEmailVerified(data);
+
         const loggedInUser = {
           email: data?.email || form.email.trim(),
           token: data?.token,
           name: data?.name,
-          emailVerified: resolveEmailVerified(data),
+          role: data?.role,
+          provider: data?.provider || "LOCAL",
+          emailVerified: isEmailVerified,
         };
 
         localStorage.setItem(
@@ -76,15 +82,22 @@ const Auth = () => {
         );
 
         try {
-          const profileRes = await API.get(`/user?email=${loggedInUser.email}`);
+          const profileRes = await API.get("/profile");
+          isEmailVerified = resolveEmailVerified(profileRes.data);
           const syncedUser = {
             ...loggedInUser,
             ...profileRes.data,
-            emailVerified: resolveEmailVerified(profileRes.data),
+            emailVerified: isEmailVerified,
           };
           localStorage.setItem("user", JSON.stringify(syncedUser));
         } catch {
           // Keep login flow working even if profile sync endpoint is unavailable.
+        }
+
+        if (!isEmailVerified) {
+          toast("Please verify your email using OTP.");
+          navigate("/verify-email", { replace: true });
+          return;
         }
 
         toast.success("Login successful!");
@@ -117,6 +130,11 @@ const Auth = () => {
 
   const handleForgotPassword = () => {
          navigate("/reset-password");
+  };
+
+  const handleGoogleLogin = () => {
+    const googleLoginUrl = `${API.defaults.baseURL}/oauth2/authorization/google`;
+    window.location.href = googleLoginUrl;
   };
 
   return (
@@ -257,7 +275,11 @@ const Auth = () => {
 
        {/* Social Buttons */}
 <div className="mt-5 flex w-full flex-col gap-2.5">
-  <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition hover:-translate-y-0.5 hover:bg-gray-100 shadow-sm hover:shadow-md duration-300">
+  <button
+    type="button"
+    onClick={handleGoogleLogin}
+    className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition hover:-translate-y-0.5 hover:bg-gray-100 shadow-sm hover:shadow-md duration-300"
+  >
     <FcGoogle className="h-4.5 w-4.5 text-red-500" />
     Continue with Google
   </button>
