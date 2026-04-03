@@ -160,6 +160,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .name(request.getName())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ROLE_USER)
+            .isActive(true)
                 .isAccountVerified(false)
                 .resetOtpExpiredAt(0L)
                 .verifyOtp(null)

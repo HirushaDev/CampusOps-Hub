@@ -1,8 +1,11 @@
 package com.Authentication.BACKEND.Controller;
 
+import com.Authentication.BACKEND.Entity.Role;
+import com.Authentication.BACKEND.Entity.UserEntity;
 import com.Authentication.BACKEND.Io.AuthRequest;
 import com.Authentication.BACKEND.Io.AuthResponse;
 import com.Authentication.BACKEND.Io.ResetPasswordRequest;
+import com.Authentication.BACKEND.Repository.UserRepository;
 import com.Authentication.BACKEND.Service.AppUserDetailsService;
 import com.Authentication.BACKEND.Service.ProfileService;
 import com.Authentication.BACKEND.Util.JwtUtil;
@@ -35,10 +38,32 @@ public class AuthController {
     private final AppUserDetailsService appUserDetailsService;
     private final JwtUtil jwtUtil;
     private final ProfileService profileService;
+    private final UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        return handleLogin(request, false);
+    }
+
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> adminLogin(@RequestBody AuthRequest request) {
+        return handleLogin(request, true);
+    }
+
+    private ResponseEntity<?> handleLogin(AuthRequest request, boolean adminOnly) {
         try {
+            UserEntity user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new BadCredentialsException("Email or password is incorrect"));
+
+            if (adminOnly) {
+                if (user.getRole() != Role.ROLE_ADMIN) {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", true);
+                    error.put("message", "Only admin email can login here");
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+                }
+            }
+
             authenticate(request.getEmail(), request.getPassword());
             final UserDetails userDetails = appUserDetailsService.loadUserByUsername(request.getEmail());
             final String jwtToken = jwtUtil.generateToken(userDetails);
@@ -49,7 +74,7 @@ public class AuthController {
                     .sameSite("Strict")
                     .build();
             return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .body(new AuthResponse(request.getEmail(), jwtToken));
+                    .body(new AuthResponse(request.getEmail(), jwtToken, user.getRole().name()));
         } catch (BadCredentialsException ex) {
             Map<String, Object> error = new HashMap<>();
             error.put("error", true);

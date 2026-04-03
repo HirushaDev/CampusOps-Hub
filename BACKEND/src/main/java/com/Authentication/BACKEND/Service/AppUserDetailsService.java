@@ -26,6 +26,10 @@ public class AppUserDetailsService implements UserDetailsService {
         return new User(
                 existingUser.getEmail(),
                 existingUser.getPassword(),
+            existingUser.getIsActive() == null || existingUser.getIsActive(),
+            true,
+            true,
+            true,
                 List.of(new SimpleGrantedAuthority(existingUser.getRole().name()))
         );
     }

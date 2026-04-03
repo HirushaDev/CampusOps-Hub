@@ -33,6 +33,7 @@ public class UserEntity {
     private Long verifyOtpExpiredAt;
     private String resetOtp;
     private Long resetOtpExpiredAt;
+    private Boolean isActive;
 
     @Enumerated(EnumType.STRING)
     private Role role;
