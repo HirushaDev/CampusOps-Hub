@@ -57,6 +57,46 @@ const formatRoleLabel = (role) => {
     .join(" ");
 };
 
+const formatAuthProviderLabel = (provider) => {
+  if (!provider || typeof provider !== "string") {
+    return "Local";
+  }
+
+  const normalizedProvider = provider.trim().toUpperCase();
+  if (normalizedProvider === "GOOGLE") {
+    return "Google";
+  }
+
+  if (normalizedProvider === "LOCAL") {
+    return "Local";
+  }
+
+  return provider
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
+const formatCreatedAt = (createdAtValue) => {
+  if (!createdAtValue) {
+    return "-";
+  }
+
+  const parsedDate = new Date(createdAtValue);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "-";
+  }
+
+  return parsedDate.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const resolveUserIdentifier = (user) => {
   if (!user) {
     return "";
@@ -402,6 +442,8 @@ const Users = () => {
                   <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Auth Provider</th>
+                  <th className="px-4 py-3">Created At</th>
                   <th className="px-4 py-3">Verified</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Role</th>
@@ -425,6 +467,8 @@ const Users = () => {
                       <td className="px-4 py-3 font-medium text-slate-300">{user.id || user.userId}</td>
                       <td className="px-4 py-3 font-semibold text-slate-100">{user.name}</td>
                       <td className="px-4 py-3 text-slate-300">{user.email}</td>
+                      <td className="px-4 py-3 text-slate-300">{formatAuthProviderLabel(user.authProvider)}</td>
+                      <td className="px-4 py-3 text-slate-300">{formatCreatedAt(user.createdAt)}</td>
                       <td className="px-4 py-3">
                         {user.isAccountVerified ? (
                           <span className="inline-flex items-center rounded-full border border-sky-400/40 bg-sky-500/15 px-2.5 py-1 text-xs font-semibold text-sky-200">
@@ -527,7 +571,7 @@ const Users = () => {
 
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
+                    <td colSpan={10} className="px-4 py-10 text-center text-slate-400">
                       <div className="inline-flex items-center gap-2">
                         <FiUserCheck className="text-slate-500" />
                         No users match your filters.
