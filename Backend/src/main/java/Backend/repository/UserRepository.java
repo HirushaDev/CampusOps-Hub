@@ -1,16 +1,16 @@
 package Backend.repository;
 
-import Backend.model.User;
+import Backend.Entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+
 import java.util.Optional;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    // Add this method - findByEmail
-    Optional<User> findByEmail(String email);
+    Optional<UserEntity>findByEmail(String email);
+    Optional<UserEntity> findByUserId(String userId);
 
-    // Add this method - existsByEmail
     Boolean existsByEmail(String email);
+
+
 }

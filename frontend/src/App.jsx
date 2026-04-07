@@ -2,7 +2,11 @@ import React from "react";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminDashboard from "./Components/AdminDashboard";
-import ModernResourceBooking from "./Components/BookingPage";
+import Auth from "./Components/login";
+import Dashboard from "./Components/Dashboard";
+import ResetPassword from "./Components/ResetPassword";
+import OAuth2Success from "./Components/OAuth2Success";
+import VerifyEmail from "./Components/VerifyEmail";
 
 
 function App() {
@@ -11,7 +15,12 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<AdminDashboard />} />
-          <Route path="/booking" element={<ModernResourceBooking />} />
+          <Route path="/login" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/oauth2/success" element={<OAuth2Success />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+
         </Routes>
       </div>
     </BrowserRouter>
