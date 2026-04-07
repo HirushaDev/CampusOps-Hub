@@ -6,6 +6,7 @@ import Auth from "./Components/login";
 import Dashboard from "./Components/Dashboard";
 import ResetPassword from "./Components/ResetPassword";
 import OAuth2Success from "./Components/OAuth2Success";
+import ModernResourceBooking from "./Components/BookingPage";
 import VerifyEmail from "./Components/VerifyEmail";
 
 
@@ -20,6 +21,7 @@ function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/oauth2/success" element={<OAuth2Success />} />
                         <Route path="/verify-email" element={<VerifyEmail />} />
+                            <Route path="/booking" element={<ModernResourceBooking />} />
 
         </Routes>
       </div>
